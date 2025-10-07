@@ -10,7 +10,7 @@ def log_step(message):
 log_step("Starting script")
 
 # Load the dataset. Change the file path to the location of All_diets.csv on your machine
-df = pd.read_csv("C:/Users/lilyr/Documents/operating systems/Project 1 Cloud-Native Nutritional Insights Application.html/All_Diets.csv")
+df = pd.read_csv("path to csv")
 log_step("Dataset loaded")
 
 # Handle missing data (fill missing values with mean)
@@ -94,3 +94,4 @@ print("\nDiet type with highest average protein content:", highest_protein_diet)
 print("\nMost common cuisine per diet type:\n", common_cuisines)
 
 log_step("Script finished")
+
