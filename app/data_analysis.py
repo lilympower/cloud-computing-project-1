@@ -86,7 +86,7 @@ def main():
     log_step("Starting script")
 
     # Load the dataset. Change the path to wherever the csv is located on your system.
-    df = load_dataset("C:/Users/lilyr/Documents/operating systems/Project 1 Cloud-Native Nutritional Insights Application.html/All_Diets.csv")
+    df = load_dataset("res\All_Diets.csv")
 
     # Handle missing data
     df = clean_macronutrients(df)
