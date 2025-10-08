@@ -1,9 +1,11 @@
-# data-analysis.py
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+import os
+
+OUTPUT_DIR = 'output'
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Logging function
 def log_step(message):
@@ -54,32 +56,44 @@ def get_common_cuisines(df):
 # Visualizations
 def visualize_avg_macronutrient_bar(avg_macros, nutrient):
     log_step(f"Visualizing average {nutrient} by diet type")
+    plt.figure()
     sns.barplot(x=avg_macros.index, y=avg_macros[nutrient])
     plt.title(f'Average {nutrient} by Diet Type')
     plt.ylabel(f'Average {nutrient}')
     plt.xlabel('Diet Type')
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+    filename = os.path.join(OUTPUT_DIR, f'{nutrient}_by_diet.png')
+    plt.savefig(filename)
+    plt.close()
+    log_step(f"Saved plot: {filename}")
 
 def visualize_heatmap(avg_macros):
     log_step("Visualizing heatmap of average macronutrients by diet type")
-    sns.heatmap(avg_macros, annot=True, cmap='YlGnBu', fmt='.1f')
+    plt.figure()
+    sns.heatmap(avg_macros, annot=True, cmap='rocket_r', fmt='.1f')
     plt.title('Heatmap of Average Macronutrients by Diet Type')
     plt.ylabel('Diet Type')
     plt.xlabel('Macronutrient')
     plt.tight_layout()
-    plt.show()
+    filename = os.path.join(OUTPUT_DIR, 'heatmap.png')
+    plt.savefig(filename)
+    plt.close()
+    log_step(f"Saved plot: {filename}")
 
 def visualize_top_protein_scatter(top_protein):
     log_step("Visualizing top protein-rich recipes per diet type as scatter plot")
+    plt.figure()
     sns.scatterplot(data=top_protein, x='Diet_type', y='Protein(g)', hue='Cuisine_type')
     plt.title('Top 5 Protein-Rich Recipes per Diet Type')
     plt.ylabel('Protein (g)')
     plt.xlabel('Diet Type')
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.show()
+    filename = os.path.join(OUTPUT_DIR, 'top_protein.png')
+    plt.savefig(filename)
+    plt.close()
+    log_step(f"Saved plot: {filename}")
 
 
 def main():
