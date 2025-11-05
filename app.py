@@ -75,6 +75,28 @@ def heatmap_data_api():
     avg_macros = calculate_average_macros(df)
     return avg_macros.reset_index().to_json(orient='records')
 
+@app.route('/api/regenerate_charts')
+def regenerate_charts():
+    from analysis import (
+        load_dataset, clean_macronutrients, calculate_average_macros,
+        get_top_protein_recipes, visualize_avg_macronutrient_bar,
+        visualize_heatmap, visualize_top_protein_scatter
+    )
+
+    df = load_dataset("res/All_Diets.csv")
+    df = clean_macronutrients(df)
+    avg_macros = calculate_average_macros(df)
+    top_protein = get_top_protein_recipes(df)
+
+    visualize_avg_macronutrient_bar(avg_macros, 'Protein(g)')
+    visualize_avg_macronutrient_bar(avg_macros, 'Carbs(g)')
+    visualize_avg_macronutrient_bar(avg_macros, 'Fat(g)')
+    visualize_heatmap(avg_macros)
+    visualize_top_protein_scatter(top_protein)
+
+    return {"status": "Charts regenerated successfully"}
+
+
 @app.route('/output/<path:filename>')
 def serve_output(filename):
     return send_from_directory(OUTPUT_DIR, filename)
