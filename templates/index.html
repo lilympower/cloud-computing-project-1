@@ -1,121 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nutritional Insights</title>
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.0/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<script>
-    async function fetchData(url) {
-        const res = await fetch(url);
-        return res.json();
-    }
-
-    async function renderCharts() {
-        // Average Macronutrients Bar Chart
-        const avgData = await fetchData('/api/avg_macros');
-        const labels = avgData.map(d => d.Diet_type);
-        const protein = avgData.map(d => d["Protein(g)"]);
-        const carbs = avgData.map(d => d["Carbs(g)"]);
-        const fat = avgData.map(d => d["Fat(g)"]);
-
-        new Chart(document.getElementById('barChart'), {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [
-                    { label: 'Protein (g)', data: protein, backgroundColor: 'rgba(54, 162, 235, 0.6)' },
-                    { label: 'Carbs (g)', data: carbs, backgroundColor: 'rgba(255, 206, 86, 0.6)' },
-                    { label: 'Fat (g)', data: fat, backgroundColor: 'rgba(255, 99, 132, 0.6)' }
-                ]
-            },
-            options: { responsive: true, plugins: { legend: { position: 'top' } } }
-        });
-
-        // Pie Chart for cuisines
-        const cuisinesData = await fetchData('/api/common_cuisines');
-        const labelsC = cuisinesData.map(d => d.Diet_type);
-        const valuesC = cuisinesData.map(d => d.Cuisine_type.length); // dummy values for demo
-        new Chart(document.getElementById('pieChart'), {
-            type: 'pie',
-            data: {
-                labels: labelsC,
-                datasets: [{
-                    data: valuesC,
-                    backgroundColor: ['#36A2EB', '#FFCE56', '#FF6384', '#4BC0C0']
-                }]
-            }
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', renderCharts);
-</script>
-
-<body class="bg-gray-100">
-
+<body class="bg-gray-100 font-sans">
+    <!-- Header -->
     <header class="bg-blue-600 p-4 text-white">
-        <h1 class="text-3xl font-semibold">Nutritional Insights</h1>
+        <h1 class="text-3xl font-semibold text-center">Nutritional Insights Dashboard</h1>
     </header>
 
+    <!-- Main Content -->
     <main class="container mx-auto p-6">
-        <section class="mb-8">
-            <h2 class="text-2xl font-semibold mb-4">Explore Nutritional Insights</h2>
+        <!-- Overview Section -->
+        <section class="mb-10">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Explore Nutritional Insights</h2>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-white p-4 shadow-lg rounded-lg">
-                    <h3 class="font-semibold">Bar Chart</h3>
-                    <p class="text-sm text-gray-600">Average macronutrient content by diet type.</p>
-                    <canvas id="barChart" class="w-full h-48"></canvas>
+
+                <!-- Protein Bar Chart -->
+                <div class="bg-white p-4 shadow-lg rounded-lg flex flex-col items-center">
+                    <h3 class="font-semibold mb-2">Protein Bar Chart</h3>
+                    <p class="text-sm text-gray-600 mb-2 text-center">
+                        Average Protein content by Diet Type
+                    </p>
+                    <img src="/output/Protein(g)_by_diet.png"
+                         alt="Protein Chart"
+                         class="w-full h-48 object-contain border rounded">
                 </div>
 
-                <div class="bg-white p-4 shadow-lg rounded-lg">
-                    <h3 class="font-semibold">Scatter Plot</h3>
-                    <p class="text-sm text-gray-600">Nutrient relationships (e.g., protein vs carbs).</p>
-                    <canvas id="scatterPlot" class="w-full h-48"></canvas>
+                <!-- Carbs Bar Chart -->
+                <div class="bg-white p-4 shadow-lg rounded-lg flex flex-col items-center">
+                    <h3 class="font-semibold mb-2">Carbs Bar Chart</h3>
+                    <p class="text-sm text-gray-600 mb-2 text-center">
+                        Average Carbohydrates by Diet Type
+                    </p>
+                    <img src="/output/Carbs(g)_by_diet.png"
+                         alt="Carbs Chart"
+                         class="w-full h-48 object-contain border rounded">
                 </div>
 
-                <div class="bg-white p-4 shadow-lg rounded-lg">
-                    <h3 class="font-semibold">Heatmap</h3>
-                    <p class="text-sm text-gray-600">Nutrient correlations.</p>
-                    <div id="heatmap" class="w-full h-48"></div>
+                <!-- Fat Bar Chart -->
+                <div class="bg-white p-4 shadow-lg rounded-lg flex flex-col items-center">
+                    <h3 class="font-semibold mb-2">Fat Bar Chart</h3>
+                    <p class="text-sm text-gray-600 mb-2 text-center">
+                        Average Fat content by Diet Type
+                    </p>
+                    <img src="/output/Fat(g)_by_diet.png"
+                         alt="Fat Chart"
+                         class="w-full h-48 object-contain border rounded">
                 </div>
 
-                <div class="bg-white p-4 shadow-lg rounded-lg">
-                    <h3 class="font-semibold">Pie Chart</h3>
-                    <p class="text-sm text-gray-600">Recipe distribution by diet type.</p>
-                    <canvas id="pieChart" class="w-full h-48"></canvas>
+                <!-- Heatmap -->
+                <div class="bg-white p-4 shadow-lg rounded-lg flex flex-col items-center">
+                    <h3 class="font-semibold mb-2">Heatmap</h3>
+                    <p class="text-sm text-gray-600 mb-2 text-center">
+                        Visualizing Macronutrient Relationships
+                    </p>
+                    <img src="/output/heatmap.png"
+                         alt="Heatmap"
+                         class="w-full h-48 object-contain border rounded">
                 </div>
             </div>
         </section>
 
-        <section class="mb-8">
-            <h2 class="text-2xl font-semibold mb-4">Filters and Data Interaction</h2>
-            <div class="flex flex-wrap gap-4">
-                <input type="text" placeholder="Search by Diet Type" class="p-2 border rounded w-full sm:w-auto">
-                <select class="p-2 border rounded w-full sm:w-auto">
+        <!-- Scatter Plot Section -->
+        <section class="mb-10">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Top Protein-Rich Recipes</h2>
+            <div class="bg-white p-6 shadow-lg rounded-lg flex flex-col items-center">
+                <p class="text-sm text-gray-600 mb-2 text-center">
+                    Top 5 protein-rich recipes per diet type
+                </p>
+                <img src="/output/top_protein.png"
+                     alt="Top Protein Scatter Plot"
+                     class="w-full h-96 object-contain border rounded">
+            </div>
+        </section>
+
+        <!-- Controls Section -->
+        <section class="mb-10">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Data Interaction</h2>
+
+            <div class="flex flex-wrap gap-4 mb-6">
+                <input type="text" placeholder="Search by Diet Type"
+                       class="p-2 border rounded w-full sm:w-auto focus:ring focus:ring-blue-300">
+
+                <select class="p-2 border rounded w-full sm:w-auto focus:ring focus:ring-blue-300">
                     <option value="all">All Diet Types</option>
                     <option value="vegan">Vegan</option>
                     <option value="keto">Keto</option>
-                    <!-- Add more options -->
+                    <option value="paleo">Paleo</option>
+                    <option value="vegetarian">Vegetarian</option>
                 </select>
+
+                <!-- Button to refresh charts -->
+                <button id="refreshBtn"
+                        class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">
+                    🔄 Refresh Charts
+                </button>
             </div>
+
+            <div id="statusMessage" class="text-gray-700"></div>
         </section>
 
-        <section class="mb-8">
-            <h2 class="text-2xl font-semibold mb-4">API Data Interaction</h2>
-            <div class="flex flex-wrap gap-4">
-                <button class="bg-blue-600 text-white py-2 px-4 rounded">Get Nutritional Insights</button>
-                <button class="bg-green-600 text-white py-2 px-4 rounded">Get Recipes</button>
-                <button class="bg-purple-600 text-white py-2 px-4 rounded">Get Clusters</button>
-            </div>
-        </section>
-
+        <!-- Pagination Section -->
         <section>
-            <h2 class="text-2xl font-semibold mb-4">Pagination</h2>
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Pagination</h2>
             <div class="flex justify-center gap-2 mt-4">
                 <button class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">Previous</button>
                 <button class="px-3 py-1 bg-blue-600 text-white rounded">1</button>
@@ -125,10 +119,32 @@
         </section>
     </main>
 
+    <!-- Footer -->
     <footer class="bg-blue-600 p-4 text-white text-center mt-10">
         <p>&copy; 2025 Nutritional Insights. All Rights Reserved.</p>
     </footer>
 
+    <!-- Optional JS for refreshing charts -->
+    <script>
+        document.getElementById('refreshBtn').addEventListener('click', async () => {
+            const status = document.getElementById('statusMessage');
+            status.textContent = 'Refreshing charts...';
+            try {
+                const res = await fetch('/api/regenerate_charts');
+                const data = await res.json();
+                if (data.status === 'Charts regenerated successfully') {
+                    status.textContent = '✅ Charts refreshed!';
+                    // Force refresh of images to avoid caching
+                    document.querySelectorAll('img').forEach(img => {
+                        img.src = img.src.split('?')[0] + '?t=' + new Date().getTime();
+                    });
+                } else {
+                    status.textContent = '⚠️ Unexpected response from server.';
+                }
+            } catch (e) {
+                status.textContent = '❌ Failed to refresh charts.';
+            }
+        });
+    </script>
 </body>
-
 </html>

@@ -1,5 +1,7 @@
 import pandas as pd
 from datetime import datetime
+import matplotlib.pyplot as plt
+import seaborn as sns
 import os
 
 OUTPUT_DIR = 'output'
@@ -57,6 +59,44 @@ def get_common_cuisines(df):
     return df.groupby('Diet_type')['Cuisine_type'].agg(
         lambda x: x.mode().iloc[0] if not x.mode().empty else 'Unknown'
     )
+
+def visualize_avg_macronutrient_bar(avg_macros, nutrient):
+    plt.figure()
+    sns.barplot(x=avg_macros.index, y=avg_macros[nutrient])
+    plt.title(f'Average {nutrient} by Diet Type')
+    plt.ylabel(f'Average {nutrient}')
+    plt.xlabel('Diet Type')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    filename = os.path.join(OUTPUT_DIR, f'{nutrient}_by_diet.png')
+    plt.savefig(filename)
+    plt.close()
+    return filename
+
+def visualize_heatmap(avg_macros):
+    plt.figure()
+    sns.heatmap(avg_macros, annot=True, cmap='rocket_r', fmt='.1f')
+    plt.title('Heatmap of Average Macronutrients by Diet Type')
+    plt.ylabel('Diet Type')
+    plt.xlabel('Macronutrient')
+    plt.tight_layout()
+    filename = os.path.join(OUTPUT_DIR, 'heatmap.png')
+    plt.savefig(filename)
+    plt.close()
+    return filename
+
+def visualize_top_protein_scatter(top_protein):
+    plt.figure()
+    sns.scatterplot(data=top_protein, x='Diet_type', y='Protein(g)', hue='Cuisine_type')
+    plt.title('Top 5 Protein-Rich Recipes per Diet Type')
+    plt.ylabel('Protein (g)')
+    plt.xlabel('Diet Type')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    filename = os.path.join(OUTPUT_DIR, 'top_protein.png')
+    plt.savefig(filename)
+    plt.close()
+    return filename
 
 def run_full_analysis(filepath):
     """
