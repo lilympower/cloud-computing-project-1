@@ -2,17 +2,11 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# Optional: define constants
 OUTPUT_DIR = 'output'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Simple logging helper (for backend console output)
 def log_step(message):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {message}")
-
-# -----------------------------------------------------------
-# Data Loading & Cleaning
-# -----------------------------------------------------------
 
 def load_dataset(filepath):
     """Load the CSV dataset."""
@@ -29,10 +23,6 @@ def clean_macronutrients(df):
             log_step(f"Warning: Column '{col}' not found in dataset")
     return df
 
-# -----------------------------------------------------------
-# Core Analysis Functions
-# -----------------------------------------------------------
-
 def calculate_average_macros(df):
     """Calculate average Protein, Carbs, and Fat per diet type."""
     log_step("Calculating average macronutrient content per diet type")
@@ -48,7 +38,7 @@ def add_nutrient_ratios(df):
     log_step("Adding nutrient ratio columns")
     df['Protein_to_Carbs_ratio'] = df['Protein(g)'] / df['Carbs(g)']
     df['Carbs_to_Fat_ratio'] = df['Carbs(g)'] / df['Fat(g)']
-    df = df.replace([float('inf'), -float('inf')], pd.NA)  # handle division by zero
+    df = df.replace([float('inf'), -float('inf')], pd.NA)  
     df = df.fillna(0)
     return df
 
@@ -67,10 +57,6 @@ def get_common_cuisines(df):
     return df.groupby('Diet_type')['Cuisine_type'].agg(
         lambda x: x.mode().iloc[0] if not x.mode().empty else 'Unknown'
     )
-
-# -----------------------------------------------------------
-# Optional helper for pre-packaged analytics summary
-# -----------------------------------------------------------
 
 def run_full_analysis(filepath):
     """

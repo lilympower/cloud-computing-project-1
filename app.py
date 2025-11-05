@@ -13,7 +13,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 @app.route('/')
 def index():
-    return render_template('index.html')  # serves your HTML dashboard
+    return render_template('index.html')  
 
 @app.route('/api/avg_macros')
 def avg_macros_api():
