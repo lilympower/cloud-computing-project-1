@@ -6,6 +6,8 @@
     <title>Nutritional Insights</title>
     <!-- Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.0/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 </head>
 
 <body class="bg-gray-100 font-sans">
@@ -28,9 +30,7 @@
                     <p class="text-sm text-gray-600 mb-2 text-center">
                         Average Protein content by Diet Type
                     </p>
-                    <img src="/output/Protein(g)_by_diet.png"
-                         alt="Protein Chart"
-                         class="w-full h-48 object-contain border rounded">
+                    <canvas id="proteinChart" class="w-full" style="max-height: 200px;"></canvas>
                 </div>
 
                 <!-- Carbs Bar Chart -->
@@ -39,9 +39,7 @@
                     <p class="text-sm text-gray-600 mb-2 text-center">
                         Average Carbohydrates by Diet Type
                     </p>
-                    <img src="/output/Carbs(g)_by_diet.png"
-                         alt="Carbs Chart"
-                         class="w-full h-48 object-contain border rounded">
+                    <canvas id="carbsChart" class="w-full" style="max-height: 200px;"></canvas>
                 </div>
 
                 <!-- Fat Bar Chart -->
@@ -50,20 +48,16 @@
                     <p class="text-sm text-gray-600 mb-2 text-center">
                         Average Fat content by Diet Type
                     </p>
-                    <img src="/output/Fat(g)_by_diet.png"
-                         alt="Fat Chart"
-                         class="w-full h-48 object-contain border rounded">
+                    <canvas id="fatChart" class="w-full" style="max-height: 200px;"></canvas>
                 </div>
 
-                <!-- Heatmap -->
+                <!-- Heatmap (using grouped bar chart) -->
                 <div class="bg-white p-4 shadow-lg rounded-lg flex flex-col items-center">
-                    <h3 class="font-semibold mb-2">Heatmap</h3>
+                    <h3 class="font-semibold mb-2">Macronutrient Overview</h3>
                     <p class="text-sm text-gray-600 mb-2 text-center">
-                        Visualizing Macronutrient Relationships
+                        All Macronutrients by Diet Type
                     </p>
-                    <img src="/output/heatmap.png"
-                         alt="Heatmap"
-                         class="w-full h-48 object-contain border rounded">
+                    <canvas id="heatmapChart" class="w-full" style="max-height: 200px;"></canvas>
                 </div>
             </div>
         </section>
@@ -75,9 +69,7 @@
                 <p class="text-sm text-gray-600 mb-2 text-center">
                     Top 5 protein-rich recipes per diet type
                 </p>
-                <img src="/output/top_protein.png"
-                     alt="Top Protein Scatter Plot"
-                     class="w-full h-96 object-contain border rounded">
+                <canvas id="topProteinChart" style="max-height: 400px;"></canvas>
             </div>
         </section>
 
@@ -86,15 +78,17 @@
             <h2 class="text-2xl font-semibold mb-4 text-gray-800">Data Interaction</h2>
 
             <div class="flex flex-wrap gap-4 mb-6">
-                <input type="text" placeholder="Search by Diet Type"
+                <input type="text" id="searchInput" placeholder="Search by Diet Type"
                        class="p-2 border rounded w-full sm:w-auto focus:ring focus:ring-blue-300">
 
-                <select class="p-2 border rounded w-full sm:w-auto focus:ring focus:ring-blue-300">
+               <select id="dietFilter"
+                    aria-label="Filter by diet type"
+                    class="p-2 border rounded w-full sm:w-auto focus:ring focus:ring-blue-300">
                     <option value="all">All Diet Types</option>
-                    <option value="vegan">Vegan</option>
-                    <option value="keto">Keto</option>
-                    <option value="paleo">Paleo</option>
-                    <option value="vegetarian">Vegetarian</option>
+                    <option value="Vegan">Vegan</option>
+                    <option value="Keto">Keto</option>
+                    <option value="Paleo">Paleo</option>
+                    <option value="Vegetarian">Vegetarian</option>
                 </select>
 
                 <!-- Button to refresh charts -->
@@ -114,27 +108,314 @@
         <p>&copy; 2025 Nutritional Insights. All Rights Reserved.</p>
     </footer>
 
-    <!-- Optional JS for refreshing charts -->
+    <!-- JavaScript for Charts -->
     <script>
+        // Store chart instances globally
+        let charts = {
+            protein: null,
+            carbs: null,
+            fat: null,
+            heatmap: null,
+            topProtein: null
+        };
+
+        // Color palette for different diet types
+        const dietColors = {
+            'Vegan': 'rgba(34, 139, 34, 0.7)',
+            'Keto': 'rgba(255, 99, 132, 0.7)',
+            'Paleo': 'rgba(255, 159, 64, 0.7)',
+            'Vegetarian': 'rgba(75, 192, 192, 0.7)',
+            'Dash': 'rgba(153, 102, 255, 0.7)',
+            'Mediterranean': 'rgba(54, 162, 235, 0.7)'
+        };
+
+        // Common chart options
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        };
+
+        // Initialize all charts
+        async function initCharts() {
+            try {
+                const avgMacrosData = await fetch('/api/avg_macros').then(r => r.json());
+                const topProteinData = await fetch('/api/top_protein').then(r => r.json());
+
+                createProteinChart(avgMacrosData);
+                createCarbsChart(avgMacrosData);
+                createFatChart(avgMacrosData);
+                createHeatmapChart(avgMacrosData);
+                createTopProteinChart(topProteinData);
+            } catch (error) {
+                console.error('Error loading chart data:', error);
+                document.getElementById('statusMessage').textContent = '❌ Error loading data';
+            }
+        }
+
+        // Create Protein Bar Chart
+        function createProteinChart(data) {
+            const ctx = document.getElementById('proteinChart').getContext('2d');
+            
+            if (charts.protein) charts.protein.destroy();
+
+            charts.protein = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.Diet_type),
+                    datasets: [{
+                        label: 'Protein (g)',
+                        data: data.map(d => d['Protein(g)']),
+                        backgroundColor: data.map(d => dietColors[d.Diet_type] || 'rgba(54, 162, 235, 0.7)'),
+                        borderColor: data.map(d => dietColors[d.Diet_type]?.replace('0.7', '1') || 'rgba(54, 162, 235, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Protein (g)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create Carbs Bar Chart
+        function createCarbsChart(data) {
+            const ctx = document.getElementById('carbsChart').getContext('2d');
+            
+            if (charts.carbs) charts.carbs.destroy();
+
+            charts.carbs = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.Diet_type),
+                    datasets: [{
+                        label: 'Carbs (g)',
+                        data: data.map(d => d['Carbs(g)']),
+                        backgroundColor: data.map(d => dietColors[d.Diet_type] || 'rgba(255, 159, 64, 0.7)'),
+                        borderColor: data.map(d => dietColors[d.Diet_type]?.replace('0.7', '1') || 'rgba(255, 159, 64, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Carbs (g)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create Fat Bar Chart
+        function createFatChart(data) {
+            const ctx = document.getElementById('fatChart').getContext('2d');
+            
+            if (charts.fat) charts.fat.destroy();
+
+            charts.fat = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.Diet_type),
+                    datasets: [{
+                        label: 'Fat (g)',
+                        data: data.map(d => d['Fat(g)']),
+                        backgroundColor: data.map(d => dietColors[d.Diet_type] || 'rgba(153, 102, 255, 0.7)'),
+                        borderColor: data.map(d => dietColors[d.Diet_type]?.replace('0.7', '1') || 'rgba(153, 102, 255, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Fat (g)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create Heatmap (Grouped Bar Chart)
+        function createHeatmapChart(data) {
+            const ctx = document.getElementById('heatmapChart').getContext('2d');
+            
+            if (charts.heatmap) charts.heatmap.destroy();
+
+            charts.heatmap = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.Diet_type),
+                    datasets: [
+                        {
+                            label: 'Protein',
+                            data: data.map(d => d['Protein(g)']),
+                            backgroundColor: 'rgba(34, 139, 34, 0.7)',
+                            borderColor: 'rgba(34, 139, 34, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Carbs',
+                            data: data.map(d => d['Carbs(g)']),
+                            backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Fat',
+                            data: data.map(d => d['Fat(g)']),
+                            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Grams'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create Top Protein Scatter/Bubble Chart
+        function createTopProteinChart(data) {
+            const ctx = document.getElementById('topProteinChart').getContext('2d');
+            
+            if (charts.topProtein) charts.topProtein.destroy();
+
+            // Group data by diet type
+            const dietGroups = {};
+            data.forEach(item => {
+                if (!dietGroups[item.Diet_type]) {
+                    dietGroups[item.Diet_type] = [];
+                }
+                dietGroups[item.Diet_type].push(item);
+            });
+
+            // Create datasets for each diet type
+            const datasets = Object.keys(dietGroups).map(diet => ({
+                label: diet,
+                data: dietGroups[diet].map((item, index) => ({
+                    x: index + 1,
+                    y: item['Protein(g)'],
+                    recipe: item.Recipe_name,
+                    cuisine: item.Cuisine_type
+                })),
+                backgroundColor: dietColors[diet] || 'rgba(54, 162, 235, 0.7)',
+                borderColor: dietColors[diet]?.replace('0.7', '1') || 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }));
+
+            charts.topProtein = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const item = context.raw;
+                                    return [
+                                        `Recipe: ${item.recipe}`,
+                                        `Protein: ${item.y}g`,
+                                        `Cuisine: ${item.cuisine || 'N/A'}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Rank (Top 5 per Diet)'
+                            },
+                            ticks: {
+                                stepSize: 1
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Protein (g)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Refresh button functionality
         document.getElementById('refreshBtn').addEventListener('click', async () => {
             const status = document.getElementById('statusMessage');
             status.textContent = 'Refreshing charts...';
             try {
-                const res = await fetch('/api/regenerate_charts');
-                const data = await res.json();
-                if (data.status === 'Charts regenerated successfully') {
-                    status.textContent = '✅ Charts refreshed!';
-                    // Force refresh of images to avoid caching
-                    document.querySelectorAll('img').forEach(img => {
-                        img.src = img.src.split('?')[0] + '?t=' + new Date().getTime();
-                    });
-                } else {
-                    status.textContent = '⚠️ Unexpected response from server.';
-                }
+                await initCharts();
+                status.textContent = '✅ Charts refreshed!';
+                setTimeout(() => status.textContent = '', 3000);
             } catch (e) {
                 status.textContent = '❌ Failed to refresh charts.';
+                console.error(e);
             }
         });
+
+        // Filter functionality
+        document.getElementById('dietFilter').addEventListener('change', async (e) => {
+            const selectedDiet = e.target.value;
+            // Implement filtering logic here if needed
+            console.log('Filter changed to:', selectedDiet);
+        });
+
+        // Initialize charts on page load
+        window.addEventListener('load', initCharts);
     </script>
 </body>
 </html>
