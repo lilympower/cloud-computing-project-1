@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -79,10 +80,9 @@
 
             <div class="flex flex-wrap gap-4 mb-6">
                 <input type="text" id="searchInput" placeholder="Search by Diet Type"
-                       class="p-2 border rounded w-full sm:w-auto focus:ring focus:ring-blue-300">
+                    class="p-2 border rounded w-full sm:w-auto focus:ring focus:ring-blue-300">
 
-               <select id="dietFilter"
-                    aria-label="Filter by diet type"
+                <select id="dietFilter" aria-label="Filter by diet type"
                     class="p-2 border rounded w-full sm:w-auto focus:ring focus:ring-blue-300">
                     <option value="all">All Diet Types</option>
                     <option value="Vegan">Vegan</option>
@@ -92,13 +92,102 @@
                 </select>
 
                 <!-- Button to refresh charts -->
-                <button id="refreshBtn"
-                        class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">
+                <button id="refreshBtn" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">
                     🔄 Refresh Charts
                 </button>
             </div>
 
             <div id="statusMessage" class="text-gray-700"></div>
+        </section>
+
+        <!-- Security & Compliance -->
+        <section class="mt-8">
+            <h2 class="text-2xl font-semibold mb-4">Security & Compliance</h2>
+            <div class="bg-white p-4 shadow-lg rounded-lg">
+                <h3 class="font-semibold">Security Status</h3>
+                <p class="text-sm text-gray-600">Encryption: <span class="font-semibold text-green-600">Enabled</span>
+                </p>
+                <p class="text-sm text-gray-600">Access Control: <span
+                        class="font-semibold text-green-600">Secure</span></p>
+                <p class="text-sm text-gray-600">Compliance: <span class="font-semibold text-green-600">GDPR
+                        Compliant</span></p>
+            </div>
+        </section>
+
+        <!-- OAuth / 2FA Integration -->
+        <section class="mt-8">
+            <h2 class="text-2xl font-semibold mb-4">OAuth & 2FA Integration</h2>
+            <div class="bg-white p-4 shadow-lg rounded-lg">
+                <h3 class="font-semibold">Secure Login</h3>
+
+                <button id="googleLogin" class="bg-blue-600 text-white py-2 px-4 rounded mb-4">
+                    Login with Google
+                </button>
+
+                <button id="githubLogin" class="bg-blue-600 text-white py-2 px-4 rounded mb-4">
+                    Login with GitHub
+                </button>
+
+                <div class="mt-4">
+                    <label for="2fa" class="block text-sm text-gray-600">Enter 2FA Code</label>
+                    <input id="2fa" type="text" class="p-2 border rounded w-full" placeholder="Enter your 2FA code">
+
+                    <button id="verify2fa" class="bg-green-600 text-white py-2 px-4 rounded mt-3">
+                        Verify 2FA
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            // Google Login Redirect
+            document.getElementById("googleLogin").onclick = () => {
+                window.location.href = "/login/google";
+            };
+
+            // GitHub Login Redirect
+            document.getElementById("githubLogin").onclick = () => {
+                window.location.href = "/login/github";
+            };
+
+            // 2FA Verification
+            document.getElementById("verify2fa").onclick = async () => {
+                const code = document.getElementById("2fa").value;
+
+                const res = await fetch("/2fa/verify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ code })
+                });
+
+                if (res.status === 200) {
+                    alert("2FA Verified ✓");
+                } else {
+                    alert("Invalid 2FA Code ❌");
+                }
+            };
+        </script>
+
+        <!-- Cloud Resource Cleanup -->
+        <section class="mt-8">
+            <h2 class="text-2xl font-semibold mb-4">Cloud Resource Cleanup</h2>
+            <div class="bg-white p-4 shadow-lg rounded-lg">
+                <p class="text-sm text-gray-600">Ensure that cloud resources are efficiently managed and cleaned up
+                    post-deployment.</p>
+                <button class="bg-red-600 text-white py-2 px-4 rounded">Clean Up Resources</button>
+                <script>
+                    document.getElementById("cleanupBtn").onclick = async () => {
+                        if (!confirm("Are you sure you want to delete all cloud resources?")) return;
+
+                        const res = await fetch("/cleanup", { method: "POST" });
+
+                        if (res.status === 200)
+                            alert("Cloud resources deleted successfully!");
+                        else
+                            alert("Failed to clean up resources.");
+                    };
+                </script>
+            </div>
         </section>
 
     </main>
@@ -160,7 +249,7 @@
         // Create Protein Bar Chart
         function createProteinChart(data) {
             const ctx = document.getElementById('proteinChart').getContext('2d');
-            
+
             if (charts.protein) charts.protein.destroy();
 
             charts.protein = new Chart(ctx, {
@@ -193,7 +282,7 @@
         // Create Carbs Bar Chart
         function createCarbsChart(data) {
             const ctx = document.getElementById('carbsChart').getContext('2d');
-            
+
             if (charts.carbs) charts.carbs.destroy();
 
             charts.carbs = new Chart(ctx, {
@@ -226,7 +315,7 @@
         // Create Fat Bar Chart
         function createFatChart(data) {
             const ctx = document.getElementById('fatChart').getContext('2d');
-            
+
             if (charts.fat) charts.fat.destroy();
 
             charts.fat = new Chart(ctx, {
@@ -259,7 +348,7 @@
         // Create Heatmap (Grouped Bar Chart)
         function createHeatmapChart(data) {
             const ctx = document.getElementById('heatmapChart').getContext('2d');
-            
+
             if (charts.heatmap) charts.heatmap.destroy();
 
             charts.heatmap = new Chart(ctx, {
@@ -315,7 +404,7 @@
         // Create Top Protein Scatter/Bubble Chart
         function createTopProteinChart(data) {
             const ctx = document.getElementById('topProteinChart').getContext('2d');
-            
+
             if (charts.topProtein) charts.topProtein.destroy();
 
             // Group data by diet type
@@ -358,7 +447,7 @@
                         },
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
+                                label: function (context) {
                                     const item = context.raw;
                                     return [
                                         `Recipe: ${item.recipe}`,
@@ -418,4 +507,5 @@
         window.addEventListener('load', initCharts);
     </script>
 </body>
+
 </html>

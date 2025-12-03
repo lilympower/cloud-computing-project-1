@@ -1,5 +1,9 @@
-from flask import Flask, jsonify, render_template # type: ignore
+from flask import Flask, jsonify, render_template, redirect, url_for, session # type: ignore
 import pandas as pd # type: ignore
+from authlib.integrations.flask_client import OAuth
+from flask_login import LoginManager, login_user, logout_user, login_required, UserMixin
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.resource import ResourceManagementClient
 from analysis import (
     load_dataset, clean_macronutrients, calculate_average_macros,
     get_top_protein_recipes, add_nutrient_ratios, filter_by_diet,
@@ -7,6 +11,97 @@ from analysis import (
 )
 
 app = Flask(__name__)
+SUBSCRIPTION_ID = "YOUR_AZURE_SUBSCRIPTION"
+RESOURCE_GROUP = "YOUR_RESOURCE_GROUP"
+
+app.secret_key = "YOUR_SECRET_KEY"
+
+oauth = OAuth(app)
+
+# Google OAuth
+google = oauth.register(
+    name='google',
+    client_id="GOOGLE_CLIENT_ID",
+    client_secret="GOOGLE_CLIENT_SECRET",
+    access_token_url="https://oauth2.googleapis.com/token",
+    authorize_url="https://accounts.google.com/o/oauth2/auth",
+    client_kwargs={"scope": "openid profile email"},
+)
+
+# GitHub OAuth
+github = oauth.register(
+    name='github',
+    client_id="GITHUB_CLIENT_ID",
+    client_secret="GITHUB_CLIENT_SECRET",
+    access_token_url="https://github.com/login/oauth/access_token",
+    authorize_url="https://github.com/login/oauth/authorize",
+    client_kwargs={"scope": "user:email"}
+)
+
+login_manager = LoginManager(app)
+
+class User(UserMixin):
+    def __init__(self, id_, email):
+        self.id = id_
+        self.email = email
+
+users = {}
+
+@app.route("/login/google")
+def login_google():
+    redirect_uri = url_for("auth_google", _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route("/auth/google")
+def auth_google():
+    token = google.authorize_access_token()
+    userinfo = google.parse_id_token(token)
+    
+    user = User(userinfo["sub"], userinfo["email"])
+    users[user.id] = user
+    login_user(user)
+
+    return redirect("/")
+
+@app.route("/login/github")
+def login_github():
+    redirect_uri = url_for("auth_github", _external=True)
+    return github.authorize_redirect(redirect_uri)
+
+@app.route("/auth/github")
+def auth_github():
+    token = github.authorize_access_token()
+    userinfo = github.get("user").json()
+
+    user = User(str(userinfo["id"]), userinfo["email"])
+    users[user.id] = user
+    login_user(user)
+
+    return redirect("/")
+
+
+@app.before_request
+def enforce_https():
+    if request.headers.get("X-Forwarded-Proto", "http") != "https":
+        url = request.url.replace("http://", "https://", 1)
+        return redirect(url, 301)
+
+@app.after_request
+def set_secure_headers(response):
+    response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' https://cdn.jsdelivr.net https://cdn.jsdelivr.net/npm/chart.js; "
+        "style-src 'self' https://cdn.jsdelivr.net/npm/tailwindcss@2.0.0/dist/ 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "connect-src 'self';"
+    )
+    return response
+
 
 @app.route('/')
 def index():
@@ -104,6 +199,16 @@ def distribution_api():
     df = clean_macronutrients(df)
     stats = get_macronutrient_distribution(df)
     return jsonify(stats.to_dict())
+
+@app.route("/cleanup", methods=["POST"])
+def cleanup_resources():
+    credential = DefaultAzureCredential()
+    client = ResourceManagementClient(credential, SUBSCRIPTION_ID)
+
+    delete_op = client.resource_groups.begin_delete(RESOURCE_GROUP)
+    delete_op.wait()
+
+    return {"status": "cleanup_complete"}
 
 if __name__ == '__main__':
     app.run(debug=True)
